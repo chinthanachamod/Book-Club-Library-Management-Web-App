@@ -1,16 +1,25 @@
 import { Router } from 'express';
-import bookController from '../controllers/book.controller';
-import { validateRequest } from '../middleware/validate';
-import { bookSchema } from '../validations/book.validation';
-import { authenticate } from '../middleware/auth';
+import {
+    getBooks,
+    getBook,
+    createBook,
+    updateBook,
+    deleteBook,
+} from '../controllers/book.controller';
+import { authenticate, authorize } from '../middlewares/auth';
 
 const router = Router();
 
-router.get('/', authenticate, bookController.getAllBooks);
-router.get('/search', authenticate, bookController.searchBooks);
-router.get('/:id', authenticate, bookController.getBookById);
-router.post('/', authenticate, validateRequest(bookSchema), bookController.createBook);
-router.put('/:id', authenticate, validateRequest(bookSchema), bookController.updateBook);
-router.delete('/:id', authenticate, bookController.deleteBook);
+router.use(authenticate);
+router.use(authorize(['admin', 'staff']));
+
+router.route('/')
+    .get(getBooks)
+    .post(createBook);
+
+router.route('/:id')
+    .get(getBook)
+    .put(updateBook)
+    .delete(deleteBook);
 
 export default router;

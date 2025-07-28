@@ -1,74 +1,87 @@
-import { Request, Response, NextFunction } from 'express';
-import readerService from '../services/reader.service';
-import { ApiError } from '../errors/ApiError';
+import { Request, Response } from 'express';
+import Reader from '../models/reader.model';
+import { BadRequestError, NotFoundError } from '../error';
+import logger from '../utils/logger';
 
-class ReaderController {
-    async createReader(req: Request, res: Response, next: NextFunction) {
-        try {
-            const reader = await readerService.createReader(req.body);
-            res.status(201).json(reader);
-        } catch (error) {
-            next(error);
+export const getReaders = async (req: Request, res: Response) => {
+    const { search } = req.query;
+
+    let query = {};
+
+    if (search) {
+        query = {
+            $or: [
+                { name: { $regex: search as string, $options: 'i' } },
+                { email: { $regex: search as string, $options: 'i' } },
+            ],
+        };
+    }
+
+    const readers = await Reader.find(query).sort({ createdAt: -1 });
+
+    res.status(200).json(readers);
+};
+
+export const getReader = async (req: Request, res: Response) => {
+    const reader = await Reader.findById(req.params.id);
+
+    if (!reader) {
+        throw new NotFoundError('Reader not found');
+    }
+
+    res.status(200).json(reader);
+};
+
+export const createReader = async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    // Check if reader already exists
+    const existingReader = await Reader.findOne({ email });
+    if (existingReader) {
+        throw new BadRequestError('Email already in use by another reader');
+    }
+
+    const reader = await Reader.create(req.body);
+
+    logger.info(`New reader created: ${reader.email}`);
+
+    res.status(201).json(reader);
+};
+
+export const updateReader = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { email } = req.body;
+
+    // Check if email is being updated to one that's already in use
+    if (email) {
+        const existingReader = await Reader.findOne({ email, _id: { $ne: id } });
+        if (existingReader) {
+            throw new BadRequestError('Email already in use by another reader');
         }
     }
 
-    async getAllReaders(req: Request, res: Response, next: NextFunction) {
-        try {
-            const readers = await readerService.getAllReaders();
-            res.json(readers);
-        } catch (error) {
-            next(error);
-        }
+    const reader = await Reader.findByIdAndUpdate(id, req.body, {
+        new: true,
+        runValidators: true,
+    });
+
+    if (!reader) {
+        throw new NotFoundError('Reader not found');
     }
 
-    async getReaderById(req: Request, res: Response, next: NextFunction) {
-        try {
-            const reader = await readerService.getReaderById(req.params.id);
-            if (!reader) {
-                throw ApiError.notFound('Reader not found');
-            }
-            res.json(reader);
-        } catch (error) {
-            next(error);
-        }
+    logger.info(`Reader updated: ${reader.email}`);
+
+    res.status(200).json(reader);
+};
+
+export const deleteReader = async (req: Request, res: Response) => {
+    const reader = await Reader.findByIdAndDelete(req.params.id);
+
+    if (!reader) {
+        throw new NotFoundError('Reader not found');
     }
 
-    async updateReader(req: Request, res: Response, next: NextFunction) {
-        try {
-            const reader = await readerService.updateReader(req.params.id, req.body);
-            if (!reader) {
-                throw ApiError.notFound('Reader not found');
-            }
-            res.json(reader);
-        } catch (error) {
-            next(error);
-        }
-    }
+    logger.info(`Reader deleted: ${reader.email}`);
 
-    async deleteReader(req: Request, res: Response, next: NextFunction) {
-        try {
-            const reader = await readerService.deleteReader(req.params.id);
-            if (!reader) {
-                throw ApiError.notFound('Reader not found');
-            }
-            res.json({ message: 'Reader deleted successfully' });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    async searchReaders(req: Request, res: Response, next: NextFunction) {
-        try {
-            const query = req.query.q as string;
-            if (!query) {
-                throw ApiError.badRequest('Search query is required');
-            }
-            const readers = await readerService.searchReaders(query);
-            res.json(readers);
-        } catch (error) {
-            next(error);
-        }
-    }
-}
-
-export default new ReaderController();
+    res.status(200).json({ message: 'Reader deleted successfully' });
+};
