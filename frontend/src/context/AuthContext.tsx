@@ -1,61 +1,62 @@
-import { createContext, useContext, type ReactNode, useState, useEffect } from 'react';
-import type {User} from '../types';
-import { getCurrentUser } from '../services/auth.service';
-import { getToken, clearToken } from '../utils/auth';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { login as authLogin, signup as authSignup } from '../services/AuthService';
 
 interface AuthContextType {
-    user: User | null;
-    loading: boolean;
-    login: (token: string) => void;
+    user: any;
+    token: string | null;
+    login: (email: string, password: string) => Promise<void>;
+    signup: (name: string, email: string, password: string) => Promise<void>;
     logout: () => void;
+    isAuthenticated: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>(null!);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [user, setUser] = useState<any>(null);
+    const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
     useEffect(() => {
-        const initializeAuth = async () => {
-            const token = getToken();
-            if (token) {
-                try {
-                    const user = await getCurrentUser();
-                    setUser(user);
-                } catch (error) {
-                    console.error('Failed to fetch current user', error);
-                    clearToken();
-                }
-            }
-            setLoading(false);
-        };
+        // Load user data if token exists
+        if (token) {
+            // You might want to verify token or fetch user data here
 
-        initializeAuth();
-    }, []);
+        }
+    }, [token]);
 
-    const login = (token: string) => {
+    const login = async (email: string, password: string) => {
+        const { user, token } = await authLogin(email, password);
         localStorage.setItem('token', token);
-        getCurrentUser()
-            .then((user) => {
-                setUser(user);
-            })
-            .catch((error) => {
-                console.error('Failed to fetch current user after login', error);
-                clearToken();
-            });
+        setToken(token);
+        setUser(user);
+    };
+
+    const signup = async (name: string, email: string, password: string) => {
+        const { user, token } = await authSignup(name, email, password);
+        localStorage.setItem('token', token);
+        setToken(token);
+        setUser(user);
     };
 
     const logout = () => {
-        clearToken();
+        localStorage.removeItem('token');
+        setToken(null);
         setUser(null);
     };
 
-    const value = { user, loading, login, logout };
+    const isAuthenticated = !!token;
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+    return (
+        <AuthContext.Provider value={{ user, token, login, signup, logout, isAuthenticated }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
 
-export function useAuth() {
-    return useContext(AuthContext);
-}
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};

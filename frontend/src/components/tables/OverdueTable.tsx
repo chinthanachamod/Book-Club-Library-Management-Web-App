@@ -1,86 +1,90 @@
-import type { Lending } from '../../types';
+import type { Overdue } from '../../types';
 import { format } from 'date-fns';
-import { useMutation } from '@tanstack/react-query';
-import api from '../../services/api';
-import { toast } from 'react-hot-toast';
-import type { AxiosResponse } from 'axios';
 
 interface OverdueTableProps {
-    lendings: Lending[];
+    overdueItems: Overdue[];
+    onNotify: (readerId: string) => void;
 }
 
-export default function OverdueTable({ lendings }: OverdueTableProps) {
-    const notifyMutation = useMutation<AxiosResponse<any>, Error, string>({
-        mutationFn: (id: string) => api.post(`/notifications/overdue/${id}`),
-        onSuccess: () => {
-            toast.success('Notification sent successfully');
-        },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Failed to send notification');
-        },
-    });
-
-    const handleNotify = (id: string) => {
-        if (confirm('Send overdue notification to this reader?')) {
-            notifyMutation.mutate(id);
-        }
-    };
-
+export const OverdueTable = ({ overdueItems, onNotify }: OverdueTableProps) => {
     return (
-        <div className="overflow-hidden rounded-lg shadow ring-1 ring-black ring-opacity-5">
-            <table className="min-w-full divide-y divide-gray-300">
-                <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded-xl shadow-md border border-gray-100">
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gradient-to-r from-red-600 to-red-500">
                 <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Book</th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Reader</th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Due Date</th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Days Overdue</th>
-                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                        <span className="sr-only">Actions</span>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                        Reader
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                        Book
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                        Due Date
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                        Days Overdue
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                        Actions
                     </th>
                 </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                {lendings?.map((lending) => {
-                    const dueDate = new Date(lending.dueDate);
-                    const today = new Date();
-                    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-
-                    return (
-                        <tr key={lending.id}>
-                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                {typeof lending.book === 'object' ? lending.book.title : 'Loading...'}
+                <tbody className="bg-white divide-y divide-gray-100">
+                {overdueItems.length === 0 ? (
+                    <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center">
+                            <div className="text-gray-500 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-700">No overdue items</h3>
+                            <p className="text-gray-500 mt-1">All books have been returned on time</p>
+                        </td>
+                    </tr>
+                ) : (
+                    overdueItems.map((item) => (
+                        <tr key={item.id} className="bg-red-50 hover:bg-red-100 transition-colors">
+                            <td className="px-6 py-4">
+                                <div className="text-sm font-medium text-gray-900">{item.reader.name}</div>
+                                <div className="text-xs text-gray-500 mt-1">{item.reader.email}</div>
+                                <div className="text-xs text-gray-500">{item.reader.phone}</div>
                             </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {typeof lending.reader === 'object' ? (
-                                    <>
-                                        <div>{lending.reader.name}</div>
-                                        <div>{lending.reader.email}</div>
-                                        <div>{lending.reader.phone}</div>
-                                    </>
-                                ) : (
-                                    'Loading...'
-                                )}
+                            <td className="px-6 py-4">
+                                <div className="text-sm font-medium text-gray-900">{item.book.title}</div>
+                                <div className="text-xs text-gray-500 mt-1">by {item.book.author}</div>
+                                <div className="text-xs text-gray-500 font-mono">ISBN: {item.book.isbn}</div>
                             </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {format(dueDate, 'MMM d, yyyy')}
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                                {format(new Date(item.dueDate), 'MMM dd, yyyy')}
                             </td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                <span className="font-semibold text-red-600">{daysOverdue}</span> days
+                            <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                        item.daysOverdue > 14
+                                            ? 'bg-red-100 text-red-800'
+                                            : item.daysOverdue > 7
+                                                ? 'bg-orange-100 text-orange-800'
+                                                : 'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                        {item.daysOverdue} days
+                                    </span>
                             </td>
-                            <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <td className="px-6 py-4 text-sm font-medium">
                                 <button
-                                    onClick={() => handleNotify(lending.id)}
-                                    className="text-indigo-600 hover:text-indigo-900"
+                                    onClick={() => onNotify(item.reader.id)}
+                                    className="inline-flex items-center text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 px-3 py-1 rounded-md shadow-sm transition-colors"
                                 >
-                                    Notify
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                    Send Reminder
                                 </button>
                             </td>
                         </tr>
-                    );
-                })}
+                    ))
+                )}
                 </tbody>
             </table>
         </div>
     );
-}
+};
