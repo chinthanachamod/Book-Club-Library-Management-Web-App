@@ -1,11 +1,13 @@
-import { Router } from 'express';
-import { register, login, getCurrentUser } from '../controllers/auth.controller';
-import { authenticate } from '../middlewares/auth';
+import {Router} from "express";
+import {getAllUsers, login, logout, refresh, Signup} from "../controllers/auth.controller";
+import {authenticateToken} from "../middlewares/authenticateToken";
 
-const router = Router();
+const userRouters = Router();
 
-router.post('/register', register);
-router.post('/login', login);
-router.get('/me', authenticate, getCurrentUser);
+userRouters.post("/signup", Signup);
+userRouters.get("/users", authenticateToken, getAllUsers)
+userRouters.post("/login", login);
+userRouters.post("/refresh-token", refresh)
+userRouters.post("/logout", logout);
 
-export default router;
+export default userRouters;

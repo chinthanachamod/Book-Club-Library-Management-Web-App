@@ -1,126 +1,118 @@
-import { useState } from 'react';
-import type { Reader } from '../../types';
+import { useState, useEffect } from "react";
+import type { Reader } from "../../types/Reader";
 
 interface ReaderFormProps {
-    initialData?: Reader;
-    onSubmit: (reader: Omit<Reader, 'id'>) => void;
-    onCancel: () => void;
+    onSubmit: (reader: Reader) => void;
+    initialData?: Reader | null;
+    onChange?: (reader: Reader) => void;
+    onCancel?: () => void;
 }
 
-export const ReaderForm = ({ initialData, onSubmit, onCancel }: ReaderFormProps) => {
-    const [reader, setReader] = useState<Omit<Reader, 'id'>>(
-        initialData || {
-            name: '',
-            email: '',
-            phone: '',
-            address: '',
+const ReaderForm: React.FC<ReaderFormProps> = ({ onSubmit, initialData, onChange, onCancel }) => {
+    const [formData, setFormData] = useState<Reader>({
+        name: "",
+        email: "",
+        phone: "",
+    });
+
+    useEffect(() => {
+        if (initialData) {
+            setFormData(initialData);
+            onChange?.(initialData);
         }
-    );
+    }, [initialData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setReader(prev => ({
-            ...prev,
-            [name]: value,
-        }));
+        const updatedData = { ...formData, [name]: value };
+        setFormData(updatedData);
+        onChange?.(updatedData);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(reader);
+        onSubmit(formData);
+        if (!initialData) {
+            setFormData({ name: "", email: "", phone: "" });
+            onChange?.({ name: "", email: "", phone: "" });
+        }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 space-y-6">
-            <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-2xl font-bold text-gray-800">
-                    {initialData ? 'Edit Reader' : 'Add New Reader'}
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
-                    {initialData ? 'Update reader information' : 'Enter new reader details'}
-                </p>
-            </div>
+        <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md border border-gray-100">
+            <h2 className="text-xl font-semibold text-blue-700 mb-4">
+                {initialData ? "Edit Reader" : "Add New Reader"}
+            </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Full Name <span className="text-red-500">*</span>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name
                     </label>
                     <input
                         type="text"
+                        id="name"
                         name="name"
-                        value={reader.name}
+                        value={formData.name}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-lg border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border bg-gray-50 focus:bg-white transition-colors"
-                        placeholder="Enter full name"
+                        placeholder="John Doe"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         required
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Email <span className="text-red-500">*</span>
+                <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address
                     </label>
                     <input
                         type="email"
+                        id="email"
                         name="email"
-                        value={reader.email}
+                        value={formData.email}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-lg border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border bg-gray-50 focus:bg-white transition-colors"
-                        placeholder="Enter email address"
+                        placeholder="john@example.com"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         required
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Phone <span className="text-red-500">*</span>
+                <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
                     </label>
                     <input
                         type="tel"
+                        id="phone"
                         name="phone"
-                        value={reader.phone}
+                        value={formData.phone}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-lg border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border bg-gray-50 focus:bg-white transition-colors"
-                        placeholder="Enter phone number"
+                        placeholder="+1234567890"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         required
                     />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        name="address"
-                        value={reader.address}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-lg border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border bg-gray-50 focus:bg-white transition-colors"
-                        placeholder="Add your address"
-                        required
-                    />
+                <div className="flex justify-end space-x-3 pt-2">
+                    {onCancel && (
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-gray-400"
+                        >
+                            Cancel
+                        </button>
+                    )}
+                    <button
+                        type="submit"
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        {initialData ? "Update" : "Submit"}
+                    </button>
                 </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="inline-flex justify-center rounded-lg border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-150"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    className="inline-flex justify-center rounded-lg border border-transparent bg-gradient-to-r from-indigo-600 to-purple-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-150"
-                >
-                    {initialData ? 'Update Reader' : 'Add Reader'}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
     );
 };
+
+export default ReaderForm;

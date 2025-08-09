@@ -1,29 +1,35 @@
-import axios from 'axios';
+import type {User} from "../types/User.ts";
+import type {LoginFormData} from "../pages/LoginPage.tsx";
+import apiClient from "./ApiClient.ts";
 
-const API_URL = 'http://localhost:5000/api/auth';   // backend URL
-
-interface AuthResponse {
-    user: any;
-    token: string;
+export interface SignUpResponse {
+    name: string;
+    email: string;
+    _id: string;
 }
 
-export const login = async (email: string, password: string): Promise<AuthResponse> => {
-    const response = await axios.post(`${API_URL}/login`, { email, password });
-    return response.data;
-};
+export interface LoginResponse {
+    name: string;
+    email: string;
+    accessToken: string;
+    _id: string;
+}
 
-export const signup = async (name: string, email: string, password: string): Promise<AuthResponse> => {
-    const response = await axios.post(`${API_URL}/signup`, { name, email, password });
-    return response.data;
-};
+export interface LogoutResponse {
+    message: string
+}
 
-export const verifyToken = async (token: string): Promise<boolean> => {
-    try {
-        await axios.get(`${API_URL}/verify`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return true;
-    } catch (error) {
-        return false;
-    }
-};
+export const signup = async (userData: User): Promise<SignUpResponse> => {
+    const response = await apiClient.post("/auth/signup", userData)
+    return response.data
+}
+
+export const login = async (loginData: LoginFormData): Promise<LoginResponse> => {
+    const response = await apiClient.post("/auth/login", loginData)
+    return response.data
+}
+
+export const logout = async (): Promise<LogoutResponse> => {
+    const response = await apiClient.post("/auth/logout")
+    return response.data
+}

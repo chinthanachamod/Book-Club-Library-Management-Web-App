@@ -1,29 +1,21 @@
-import { Router } from 'express';
+import {Router} from "express";
 import {
+    deleteLending,
+    getLendingById,
     getLendings,
-    getLending,
-    createLending,
-    returnBook,
-    getOverdueLendings,
-} from '../controllers/lending.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+    markAsReturned,
+    saveLending, updateLending
+} from "../controllers/lending.controller";
+import {sendOverdueNotifications} from "../controllers/dashboard.controller";
 
-const router = Router();
+const lendingRoutes = Router()
 
-router.use(authenticate);
-router.use(authorize(['admin', 'staff']));
+lendingRoutes.post("/", saveLending)
+lendingRoutes.put("/:id/return", markAsReturned)
+lendingRoutes.get("/", getLendings)
+lendingRoutes.get("/:id", getLendingById)
+lendingRoutes.delete("/:id", deleteLending)
+lendingRoutes.put("/:id", updateLending)
+lendingRoutes.post("/notify-overdue", sendOverdueNotifications);
 
-router.route('/')
-    .get(getLendings)
-    .post(createLending);
-
-router.route('/overdue')
-    .get(getOverdueLendings);
-
-router.route('/:id/return')
-    .put(returnBook);
-
-router.route('/:id')
-    .get(getLending);
-
-export default router;
+export default lendingRoutes;

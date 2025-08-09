@@ -1,42 +1,37 @@
-import axios from 'axios';
-import type {Lending, Overdue} from '../types';
+import type {Lending} from "../types/Lending.ts";
+import apiClient from "./ApiClient.ts";
 
-const API_URL = 'http://localhost:5000/api'; // backend URL
+// lend book
+export const lendBook = async (data: Omit<Lending, "id" | "status" | "returnDate">) => {
+    const response = await apiClient.post("/lendings", data)
+    return response.data
+}
 
-export const getLendings = async (): Promise<Lending[]> => {
-    const response = await axios.get(`${API_URL}/lendings`);
-    return response.data;
-};
+// mark as returned
+export const markAsReturned = async (_id: string) => {
+    const response = await apiClient.put(`/lendings/${_id}/return`)
+    return response.data
+}
 
-export const getLendingById = async (id: string): Promise<Lending> => {
-    const response = await axios.get(`${API_URL}/lendings/${id}`);
-    return response.data;
-};
+// view lending history (all)
+export const fetchAllLendings = async (): Promise<Lending[]> => {
+    const response = await apiClient.get<Lending[]>("/lendings");
+    return response.data
+}
 
-export const addLending = async (lending: Omit<Lending, 'id'>): Promise<Lending> => {
-    const response = await axios.post(`${API_URL}/lendings`, lending);
-    return response.data;
-};
+// view lending history by book
+export const fetchLendingsByBookId = async (bookId: string): Promise<Lending[]> => {
+    const response = await apiClient.get(`/lendings?bookId=${bookId}`)
+    return response.data
+}
 
-export const updateLending = async (id: string, lending: Partial<Lending>): Promise<Lending> => {
-    const response = await axios.put(`${API_URL}/lendings/${id}`, lending);
-    return response.data;
-};
+// view lending history by reader
+export const fetchLendingsByReaderId = async (readerId: string): Promise<Lending[]> => {
+    const response = await apiClient.get(`/lendings?readerId=${readerId}`)
+    return response.data
+}
 
-export const deleteLending = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/lendings/${id}`);
-};
-
-export const returnBook = async (lendingId: string): Promise<Lending> => {
-    const response = await axios.patch(`${API_URL}/lendings/${lendingId}/return`);
-    return response.data;
-};
-
-export const getOverdueLendings = async (): Promise<Overdue[]> => {
-    const response = await axios.get(`${API_URL}/lendings/overdue`);
-    return response.data;
-};
-
-export const sendOverdueNotifications = async (): Promise<void> => {
-    await axios.post(`${API_URL}/lendings/notify-overdue`);
-};
+// delete lending
+export const removeLending = async (_id: string) => {
+    await apiClient.delete(`/lendings/${_id}`)
+}

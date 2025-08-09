@@ -1,23 +1,31 @@
-import axios from 'axios';
-import type {Book} from '../types';
+import type {Book} from "../types/Book.ts";
+import apiClient from "./ApiClient.ts";
 
-const API_URL = 'http://localhost:5000/api'; // backend URL
+export const fetchAllBooks = async (): Promise<Book[]> => {
+    const response = await apiClient.get<Book[]>("/books")
+    return response.data
+}
 
-export const getBooks = async (): Promise<Book[]> => {
-    const response = await axios.get(`${API_URL}/books`);
+export const fetchBookIds = async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>("/books/bookIds")
+    return response.data
+}
+
+/*export const fetchBookISBNs = async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>("/books/bookISBNs")
+    return response.data
+}*/
+
+export const removeBook = async (_id: string) => {
+    await apiClient.delete(`/books/${_id}`)
+}
+
+export const addBook = async (bookData: Omit<Book, "_id">) => {
+    const response = await apiClient.post("/books", bookData);
+    return response.data
+}
+
+export const updateBook = async (_id: string, bookData: Omit<Book, "_id">) => {
+    const response = await apiClient.put(`/books/${_id}`, bookData);
     return response.data;
-};
-
-export const addBook = async (book: Omit<Book, 'id'>): Promise<Book> => {
-    const response = await axios.post(`${API_URL}/books`, book);
-    return response.data;
-};
-
-export const updateBook = async (id: string, book: Partial<Book>): Promise<Book> => {
-    const response = await axios.put(`${API_URL}/books/${id}`, book);
-    return response.data;
-};
-
-export const deleteBook = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/books/${id}`);
-};
+}

@@ -1,35 +1,31 @@
-import axios from 'axios';
-import type {Reader} from '../types';
+import type {Reader} from "../types/Reader.ts";
+import apiClient from "./ApiClient.ts";
 
-const API_URL = 'http://localhost:5000/api'; // backend URL
+export const fetchAllReaders = async (): Promise<Reader[]> => {
+    const response = await apiClient.get<Reader[]>("/readers")
+    return response.data
+}
 
-export const getReaders = async (): Promise<Reader[]> => {
-    const response = await axios.get(`${API_URL}/readers`);
+export const fetchReaderIds = async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>("/readers/readerIds")
+    return response.data
+}
+
+/*export const fetchReaderNames = async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>("/readers/readerNames")
+    return response.data
+}*/
+
+export const removeReaders = async (_id: string) => {
+    await apiClient.delete(`/readers/${_id}`)
+}
+
+export const addReader = async (readerData: Omit<Reader, "_id">) => {
+    const response = await apiClient.post("/readers", readerData);
     return response.data;
-};
+}
 
-export const getReaderById = async (id: string): Promise<Reader> => {
-    const response = await axios.get(`${API_URL}/readers/${id}`);
+export const updateReader = async (_id: string, readerData: Omit<Reader, "_id">) => {
+    const response = await apiClient.put(`/readers/${_id}`, readerData);
     return response.data;
-};
-
-export const addReader = async (reader: Omit<Reader, 'id'>): Promise<Reader> => {
-    const response = await axios.post(`${API_URL}/readers`, reader);
-    return response.data;
-};
-
-export const updateReader = async (id: string, reader: Partial<Reader>): Promise<Reader> => {
-    const response = await axios.put(`${API_URL}/readers/${id}`, reader);
-    return response.data;
-};
-
-export const deleteReader = async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/readers/${id}`);
-};
-
-export const searchReaders = async (query: string): Promise<Reader[]> => {
-    const response = await axios.get(`${API_URL}/readers/search`, {
-        params: { q: query }
-    });
-    return response.data;
-};
+}

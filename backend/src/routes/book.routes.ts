@@ -1,25 +1,21 @@
-import { Router } from 'express';
+import {Router} from "express";
 import {
+    deleteBook, getBookIds,
     getBooks,
-    getBook,
-    createBook,
-    updateBook,
-    deleteBook,
-} from '../controllers/book.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+    getBooksById,
+    // getISBN,
+    saveBook,
+    updateBook
+} from "../controllers/book.controller";
 
-const router = Router();
+const bookRoutes = Router()
 
-router.use(authenticate);
-router.use(authorize(['admin', 'staff']));
+bookRoutes.get("/", getBooks)
+bookRoutes.post("/", saveBook)
+// bookRoutes.get("/bookISBNs", getISBN)
+bookRoutes.get("/bookIds", getBookIds)
+bookRoutes.get("/:id", getBooksById)
+bookRoutes.delete("/:id", deleteBook)
+bookRoutes.put("/:id", updateBook)
 
-router.route('/')
-    .get(getBooks)
-    .post(createBook);
-
-router.route('/:id')
-    .get(getBook)
-    .put(updateBook)
-    .delete(deleteBook);
-
-export default router;
+export default bookRoutes;

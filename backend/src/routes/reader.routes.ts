@@ -1,25 +1,21 @@
-import { Router } from 'express';
+import { Router } from "express"
 import {
-    getReaders,
-    getReader,
     createReader,
-    updateReader,
-    deleteReader,
-} from '../controllers/reader.controller';
-import { authenticate, authorize } from '../middlewares/auth';
+    deleteReader, getReaderIds,
+    // getReaderNames,
+    getReaders,
+    getReadersById,
+    updateReader
+} from "../controllers/reader.contoller";
 
-const router = Router();
+const readerRoutes = Router()
 
-router.use(authenticate);
-router.use(authorize(['admin', 'staff']));
+readerRoutes.get("/", getReaders)
+readerRoutes.post("/", createReader)
+// readerRoutes.get("/readerNames", getReaderNames)
+readerRoutes.get("/readerIds", getReaderIds)
+readerRoutes.get("/:id", getReadersById)
+readerRoutes.put("/:id", updateReader)
+readerRoutes.delete("/:id", deleteReader)
 
-router.route('/')
-    .get(getReaders)
-    .post(createReader);
-
-router.route('/:id')
-    .get(getReader)
-    .put(updateReader)
-    .delete(deleteReader);
-
-export default router;
+export default readerRoutes;
